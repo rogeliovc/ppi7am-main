@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All car from DB</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+
+<h2>Car Data</h2>
+<form>
+    <div class="mb-3 mt-3">
+        <label for="carPlate" class="form-label">Plate:</label>
+        <input type="text" class="form-control" id="carPlate" placeholder="Search by plate" name="carPlate">
+    </div>
+    <div class="mb-3 mt-3">
+        <label for="carName" class="form-label">Name:</label>
+        <input type="text" class="form-control" id="carName" placeholder="Search by name" name="carName">
+    </div>
+    <button type="button" class="btn btn-primary" onclick="findCar('carPlate','/findCarByPlatr/')">Buscar por Placa</button>
+    <button type="button" class="btn btn-primary" onclick="findCar('carName','/findCarByName/')">Buscar por Nombre</button>
+    <button type="button" class="btn btn-primary" onclick="populateTableFromJSON(url)">limpiar filtros</button>
+</form>
+
+<table id="carTable" class="table table-dark table-striped">
+    <thead>
+    <tr>
+        <th>Id</th>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Plate</th>
+        <th>Year</th>
+        <th>Options</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Table body will be populated dynamically -->
+    </tbody>
+</table>
+
+<script>
+
+    // URL from which JSON data will be fetched
+    const url = "http://localhost:8080/car";
+
+    // Function to populate table from JSON data
+    async function populateTableFromJSON(url) {
+        cleanTableRows();
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const allCarFromDB = await response.json();
+            const tableBody = document.querySelector("#carTable tbody");
+            allCarFromDB.forEach(car => {
+
+                const row = document.createElement("tr");
+                let idNumber = car.id;
+                row.innerHTML = `
+                    <td class="id">${idNumber}</td>
+                    <td contenteditable="false">${car.name}</td>
+                    <td contenteditable="false">${car.price}</td>
+                    <td contenteditable="false">${car.plate}</td>
+                    <td contenteditable="false">${car.year}</td>
+                    <td><button type="button" class="btn btn-danger" id="${idNumber}" onclick="deleteCarButton(id)">Eliminar</button>
+                    <button type="button" class="btn btn-warning" id="${idNumber}" onclick="editCar(id)">Editar</button></td>
+                `;
+                row.setAttribute("id", idNumber);
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error('There was a problem with the fetch operation:', error);
+        }
+    }
+
+    // Call the function to populate table
+    populateTableFromJSON(url);
+
+    function editCar(buttonPressId) {
+        //obtener la row que fue llamada
+        let row = document.getElementById(buttonPressId);
+
+        let nameCell = row.children.item(1);
+        let priceCell = row.children.item(2);
+        let plateCell = row.children.item(3);
+        let yearCell = row.children.item(4);
+
+        //cambiar la propiedad contenteditable
+        nameCell.setAttribute("contenteditable", "true");
+        priceCell.setAttribute("contenteditable", "true");
+        plateCell.setAttribute("contenteditable", "true");
+        yearCell.setAttribute("contenteditable", "true");
+
+        //poner el cursor sobre la celda 1
+        row.children.item(1).focus();
+
+        //cambiar el texto y color del boton de editar por guardar
+        let editButton = row.children.item(5).children.item(1);
+        editButton.setAttribute("class","btn btn-success");
+        editButton.innerHTML = "Save";
+
+
+        //al presionar el botón de guardar mandar llamar al metodo saveCustomer(con los datos de la fila)
+        editButton.addEventListener("click", function() {
+            saveCar(buttonPressId);
+        });
+
+    }
+
+    function saveCar(idButtonPress) {
+
+        console.log(idButtonPress);
+
+        let row = document.getElementById(idButtonPress);
+
+        let idCell = row.children.item(0);
+        let nameCell = row.children.item(1);
+        let priceCell = row.children.item(2);
+        let plateCell = row.children.item(3);
+        let yearCell = row.children.item(4);
+
+        console.log("row.children.item(2)="+nameCell.innerHTML);
+
+
+        const CarUpdated = {
+            id : idCell.innerHTML,
+            name : nameCell.innerHTML,
+            price : priceCell.innerHTML,
+            plate : plateCell.innerHTML,
+            year : yearCell.innerHTML
+        };
+
+
+        const apiUrl = "http://localhost:8080/car";
+
+
+        // Configure the request
+        const requestOptions = {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(CarUpdated)
+        };
+
+        // Make the POST request
+        fetch(apiUrl, requestOptions)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(carFromAPI => {
+                console.log('Success:', carFromAPI);
+                populateTableFromJSON(url);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error here
+            });
+
+    }
+    function findCar(id,findPath){
+        cleanTableRows();
+        populateTableFromJSON(url+findPath+document.getElementById(id).value);
+    }
+
+    function cleanTableRows() {
+        var tableHeaderRowCount = 1;
+        var table = document.getElementById('carTable');
+        var rowCount = table.rows.length;
+        for (var i = tableHeaderRowCount; i < rowCount; i++) {
+            table.deleteRow(tableHeaderRowCount);
+        }
+    }
+
+    function deleteCarButton(id) {
+        if (confirm("Estas seguro de eliminar el auto: "+id)) {
+            deleteCar(id);
+        } else {
+
+            console.log("No se ha eliminado el auto");
+        }
+    }
+
+    function deleteCar(id) {
+        const deleteUrl = "http://localhost:8080/car/delete-car-by-id?id="+id;
+        fetch(deleteUrl, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+                // Add any other headers if required
+            },
+            // You can include a request body if necessary
+            // body: JSON.stringify({ id: id })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response;
+            })
+            .then(data => {
+                console.log('OK', data);
+                populateTableFromJSON(url);
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+                // Handle errors, show an error message, or retry the operation
+            });
+    }
+</script>
+
+</body>
+</html>

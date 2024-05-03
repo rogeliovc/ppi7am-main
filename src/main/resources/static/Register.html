@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AGENDA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <div class="card">
+                <div class="card-body">
+                    <h2>Insertar un nuevo trabajo</h2>
+                    <form >
+                        <div class="mb-3 mt-3">
+                            <label for="carName" class="form-label">Name:</label>
+                            <input type="text" class="form-control" id="carName" placeholder="Enter name" name="carName">
+                        </div>
+                        <div class="mb-3 mt-3">
+                            <label for="carPrice" class="form-label">Price:</label>
+                            <input type="text" class="form-control" id="carPrice" placeholder="Enter price" name="carPrice">
+                        </div>
+                        <div class="mb-3 mt-3">
+                            <label for="carPlate" class="form-label">Plate:</label>
+                            <input type="text" class="form-control" id="carPlate" placeholder="Enter plate" name="carPlate">
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <label for="carYear" class="form-label">Year:</label>
+                                <input type="text" class="form-control" id="carYear" placeholder="Enter year" name="carYear">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <button type="button" class="btn btn-dark" onclick="carRegister()">Agendar</button>
+                            </div>
+                            <div class="col">
+                                <a href="http://localhost:63342/mecanico/static/menu.html?_ijt=aokcukc6d5pgq6qpdhb7pmb9o1&_ij_reload=RELOAD_ON_SAVE">
+                                    <button type="button" class="btn btn-secondary">Volver a inicio</button>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function cleanScreen(){
+        document.getElementById("carName").value = "";
+        document.getElementById("carPrice").value = "";
+        document.getElementById("carPlate").value = "";
+        document.getElementById("carYear").value = "";
+    }
+    function carRegister(){
+        alert("Chamba agregada.");
+        const formCarName = document.getElementById("carName").value;
+        const formCarPrice = document.getElementById("carPrice").value;
+        const formCarPlate = document.getElementById("carPlate").value;
+        const formCarYear = document.getElementById("carYear").value;
+
+        const apiUrl = "http://localhost:8080/car";
+
+        //crear el objeto
+        const carObject = {
+            name : formCarName,
+            price : formCarPrice,
+            plate : formCarPlate,
+            year : formCarYear,
+        };
+
+        const requestOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(carObject)
+        };
+        //llamar a la URL
+
+        // Make the POST request
+        fetch(apiUrl, requestOptions)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(carFromAPI => {
+                console.log('Success:', carFromAPI);
+                cleanScreen();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error here
+            });
+    }
+</script>
+</body>
+</html>
